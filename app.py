@@ -94,56 +94,35 @@ if not st.session_state.game_over:
             st.session_state.game_over = True
             st.rerun()
 
-# --- 결과 화면 및 실시간 공유 랭킹 ---
+# --- 결과 화면 및 실시간 공유 랭킹 (범인 검거 버전) ---
 else:
     st.balloons()
     st.header(f"🏆 {st.session_state.user_name}님 종료!")
     st.metric("최종 점수", f"{st.session_state.total_score}점")
 
-    if st.session_state.total_score >= 45:
-        st.success("🔥 **당신은 캠핑 트렌드 세터!**")
-    elif st.session_state.total_score >= 30:
-        st.info("🌳 **프로 캠퍼!**")
-    else:
-        st.warning("🐣 **자유로운 영혼의 캠린이!**")
-
     st.markdown("---")
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
     try:
-        # 1. 일단 무조건 시트를 읽어옵니다. (탭 이름 생략하고 기본값으로 읽기)
+        # 1. 시트 데이터 가져오기
         df = conn.read(ttl="0s")
         
-        # 2. 데이터가 아예 없으면 빈 판을 만듭니다.
-        if df is None or df.empty:
-            df = pd.DataFrame(columns=["Name", "Score"])
-        
-        # 3. 이번 점수를 추가합니다.
+        # 2. 내 점수 추가 및 랭킹 정렬
         new_data = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
-        # 혹시 모를 열 이름 불일치를 대비해 강제 지정
-        new_data.columns = df.columns if not df.empty else ["Name", "Score"]
-        
         updated_df = pd.concat([df, new_data], ignore_index=True)
         
-        # 4. 시트 업데이트 (실패해도 게임 결과는 보여주도록 try를 한 번 더 씁니다)
-        try:
-            conn.update(data=updated_df)
-        except:
-            pass # 쓰기 실패해도 다음 단계로 진행
-            
-        # 5. 상위 3명 정렬 및 출력
-        updated_df.iloc[:, 1] = pd.to_numeric(updated_df.iloc[:, 1]) # 두 번째 열(Score)을 숫자로
-        top_3 = updated_df.sort_values(by=updated_df.columns[1], ascending=False).head(3)
+        # 3. 시트 업데이트 시도
+        conn.update(data=updated_df)
         
+        # 4. 상위 3명 출력
+        top_3 = updated_df.sort_values(by=updated_df.columns[1], ascending=False).head(3)
         for i, row in enumerate(top_3.itertuples(), 1):
-            medal = ["🥇", "🥈", "🥉"][i-1]
-            # row[1]은 Name, row[2]는 Score입니다.
-            st.write(f"{medal} {i}위: **{row[1]}** - {row[2]}점")
+            st.write(f"{i}위: **{row[1]}** - {row[2]}점")
             
     except Exception as e:
-        st.error(f"랭킹판 연결 오류가 발생했어요. ㅠㅠ")
-        st.write(f"상세 원인: {e}")
-
+        # 💡 이 부분이 핵심입니다! 에러를 아주 크게 빨간 상자에 다 집어넣어 버릴 거예요.
+        st.error(f"🚨 연결 오류 발생! 아래의 영어 문장을 저에게 알려주세요:\n\n{str(e)}")
+        
     if st.button("다시 도전하기"):
         st.session_state.clear()
         st.rerun()
