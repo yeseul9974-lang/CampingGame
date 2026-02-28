@@ -111,31 +111,42 @@ else:
     st.markdown("---")
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
- # app.py의 랭킹 처리 부분
-try:
-        # 1. 시트 읽기 (탭 이름 Sheet1 명시)
-        df = conn.read(worksheet="Sheet1", ttl="0s")
-        
-        # 2. 만약 데이터가 없거나 형식이 깨졌을 경우를 대비해 기본 틀 만들기
-        if df is None or df.empty or 'Name' not in df.columns:
+    try:
+        # 2. 구글 시트 연결 및 읽기
+        # 'Sheet1'이 없을 경우를 대비해 시도합니다.
+        try:
+            df = conn.read(worksheet="Sheet1", ttl="0s")
+        except:
+            # 탭 이름이 '시트1'인 경우를 위해 한 번 더 시도
+            df = conn.read(worksheet="시트1", ttl="0s")
+
+        # 3. 데이터가 비어있거나 형식이 깨졌을 때 강제로 틀 만들기
+        if df is None or df.empty:
             df = pd.DataFrame(columns=["Name", "Score"])
         
-        # 3. 새 데이터 추가 (숫자 타입 확실히 지정)
-        new_row = {"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}
-        new_df = pd.DataFrame([new_row])
-        
-        # 4. 기존 데이터와 합치기 (순서 고정)
-        updated_df = pd.concat([df, new_df], ignore_index=True)[["Name", "Score"]]
-        
-        # 5. 시트에 업데이트 저장
+        # 컬럼 이름이 소문자이거나 틀린 경우를 대비해 강제 지정
+        df.columns = ["Name", "Score"]
+
+        # 4. 새 점수 추가 (데이터 타입 고정)
+        new_row = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
+        updated_df = pd.concat([df, new_row], ignore_index=True)
+
+        # 5. 구글 시트에 업데이트 (가장 확실한 방법으로 저장)
         conn.update(worksheet="Sheet1", data=updated_df)
         
-        # 6. 상위 3명 출력
+        # 6. 상위 3명 정렬 및 출력
+        # 점수를 숫자로 변환 후 내림차순 정렬
+        updated_df["Score"] = pd.to_numeric(updated_df["Score"])
         top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
+        
         for i, row in enumerate(top_3.itertuples(), 1):
             medal = ["🥇", "🥈", "🥉"][i-1]
             st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
             
     except Exception as e:
-        st.error(f"⚠️ 연결 오류: {e}")
-        st.info("구글 시트의 A1이 'Name', B1이 'Score'인지 다시 확인해주세요!")
+        st.error("현재 랭킹을 저장할 수 없습니다. 시트 설정을 확인해주세요!")
+        st.info(f"기술적 에러 내용: {e}")
+
+    if st.button("다시 도전하기"):
+        st.session_state.clear()
+        st.rerun()
