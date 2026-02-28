@@ -38,14 +38,18 @@ st.set_page_config(page_title="캠핑 트렌드 퀴즈", page_icon="🏕️")
 if st.session_state.user_name == "":
     st.title("🏕️ 캠핑 트렌드 퀴즈")
     st.image("header_camping_image.jpg", use_container_width=True)
-    st.subheader("게임을 시작하기 전, 이름을 알려주세요!")
-    user_name = st.text_input("닉네임 입력", placeholder="예: 캠핑왕")
+    st.subheader("캠핑 트렌드 퀴즈에 오신 것을 환영합니다!")
+    
+    # 닉네임 입력을 옵션(선택)으로 바꿉니다.
+    user_name = st.text_input("닉네임을 입력해 주세요 (안 적으시면 '익명의 캠퍼'로 시작합니다)", placeholder="예: 캠핑왕")
+    
     if st.button("게임 시작"):
+        # 💡 여기가 핵심! 이름이 없으면 기본 이름을 넣어줍니다.
         if user_name:
             st.session_state.user_name = user_name
-            st.rerun()
         else:
-            st.warning("이름을 입력해야 랭킹에 등록될 수 있습니다!")
+            st.session_state.user_name = "익명의 캠퍼"
+        st.rerun()
     st.stop()
 
 st.title("🏕️ 캠핑 음식 트렌드 퀴즈")
