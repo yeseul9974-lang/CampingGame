@@ -129,8 +129,9 @@ else:
             medal = ["🥇", "🥈", "🥉"][i-1]
             st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
             
-    except Exception as e:
-        st.error("랭킹을 업데이트하는 중 오류가 발생했습니다. 시트 권한을 확인해주세요!")
+ # 기존 except 부분을 이렇게 잠시 바꿔보세요
+except Exception as e:
+    st.error(f"진짜 에러 내용: {e}") # 이렇게 하면 컴퓨터가 진짜 이유를 말해줍니다!
 
     if st.button("다시 도전하기"):
         st.session_state.clear()
