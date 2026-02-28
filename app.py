@@ -113,9 +113,29 @@ else:
 
  # app.py의 랭킹 처리 부분
 try:
-    # worksheet 이름을 정확히 Sheet1으로 지정합니다.
-    df = conn.read(worksheet="Sheet1", ttl="0s")
-    
-    # 만약 불러온 데이터가 아예 비어있다면 빈 판을 만듭니다.
-    if df is None or df.empty:
-        df = pd.DataFrame(columns=["Name", "Score"])
+        # 1. 시트 읽기 (탭 이름 Sheet1 명시)
+        df = conn.read(worksheet="Sheet1", ttl="0s")
+        
+        # 2. 만약 데이터가 없거나 형식이 깨졌을 경우를 대비해 기본 틀 만들기
+        if df is None or df.empty or 'Name' not in df.columns:
+            df = pd.DataFrame(columns=["Name", "Score"])
+        
+        # 3. 새 데이터 추가 (숫자 타입 확실히 지정)
+        new_row = {"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}
+        new_df = pd.DataFrame([new_row])
+        
+        # 4. 기존 데이터와 합치기 (순서 고정)
+        updated_df = pd.concat([df, new_df], ignore_index=True)[["Name", "Score"]]
+        
+        # 5. 시트에 업데이트 저장
+        conn.update(worksheet="Sheet1", data=updated_df)
+        
+        # 6. 상위 3명 출력
+        top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
+        for i, row in enumerate(top_3.itertuples(), 1):
+            medal = ["🥇", "🥈", "🥉"][i-1]
+            st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
+            
+    except Exception as e:
+        st.error(f"⚠️ 연결 오류: {e}")
+        st.info("구글 시트의 A1이 'Name', B1이 'Score'인지 다시 확인해주세요!")
