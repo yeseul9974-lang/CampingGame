@@ -112,30 +112,22 @@ else:
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
     try:
-        # 2. 구글 시트 연결 및 읽기
-        # 'Sheet1'이 없을 경우를 대비해 시도합니다.
-        try:
-            df = conn.read(worksheet="Sheet1", ttl="0s")
-        except:
-            # 탭 이름이 '시트1'인 경우를 위해 한 번 더 시도
-            df = conn.read(worksheet="시트1", ttl="0s")
+        # 2. 구글 시트 데이터 읽기
+        df = conn.read(worksheet="Sheet1", ttl="0s")
 
-        # 3. 데이터가 비어있거나 형식이 깨졌을 때 강제로 틀 만들기
+        # 3. 데이터가 비어있을 때 틀 만들기
         if df is None or df.empty:
             df = pd.DataFrame(columns=["Name", "Score"])
         
-        # 컬럼 이름이 소문자이거나 틀린 경우를 대비해 강제 지정
-        df.columns = ["Name", "Score"]
-
-        # 4. 새 점수 추가 (데이터 타입 고정)
+        # 4. 새 점수 추가
         new_row = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
         updated_df = pd.concat([df, new_row], ignore_index=True)
 
-        # 5. 구글 시트에 업데이트 (가장 확실한 방법으로 저장)
-        conn.update(worksheet="Sheet1", data=updated_df)
+        # 5. ⭐ 이 부분이 핵심 수정 사항입니다! ⭐
+        # 'data=' 를 명시하지 않고 바로 데이터를 먼저 넣어줄게요.
+        conn.update(data=updated_df, worksheet="Sheet1")
         
         # 6. 상위 3명 정렬 및 출력
-        # 점수를 숫자로 변환 후 내림차순 정렬
         updated_df["Score"] = pd.to_numeric(updated_df["Score"])
         top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
         
@@ -144,7 +136,7 @@ else:
             st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
             
     except Exception as e:
-        st.error("현재 랭킹을 저장할 수 없습니다. 시트 설정을 확인해주세요!")
+        st.error("현재 랭킹을 저장할 수 없습니다.")
         st.info(f"기술적 에러 내용: {e}")
 
     if st.button("다시 도전하기"):
