@@ -35,7 +35,11 @@ if 'step' not in st.session_state:
 # 4. 웹 UI 구성
 st.set_page_config(page_title="캠핑 트렌드 퀴즈", page_icon="🏕️")
 st.title("🏕️ 캠핑 음식 트렌드 퀴즈")
-st.caption("대중의 선택에 얼마나 가까운지 테스트해보세요!")
+
+# 여기에 삽입! (파일명을 실제 업로드한 이름으로 바꿔주세요)
+st.image("header_camping_image.jpg", use_container_width=True) 
+
+st.caption("대중의 선택에 얼마나 가까운지 테스트해보세요!")st.caption("대중의 선택에 얼마나 가까운지 테스트해보세요!")
 
 if not st.session_state.game_over:
     # --- 1~3라운드 공통 진행 ---
