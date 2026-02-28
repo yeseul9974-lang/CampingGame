@@ -111,28 +111,11 @@ else:
     st.markdown("---")
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
-   try:
-        # 구글 시트 읽기 (탭 이름을 명시해줍니다)
-        df = conn.read(worksheet="Sheet1", ttl="0s")
-        
-        # 새 점수 추가
-        new_data = pd.DataFrame([{"Name": st.session_state.user_name, "Score": st.session_state.total_score}])
-        updated_df = pd.concat([df, new_data], ignore_index=True)
-        
-        # 구글 시트 업데이트
-        conn.update(worksheet="Sheet1", data=updated_df)
-        
-        # 상위 3명 정렬
-        top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
-        
-        for i, row in enumerate(top_3.itertuples(), 1):
-            medal = ["🥇", "🥈", "🥉"][i-1]
-            st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
-            
-    except Exception as e:
-        st.warning("현재 랭킹 서버와 연결이 불안정합니다. 점수 기록만 시도할게요!")
-        st.write(f"(상세 에러: {e})")
-
-    if st.button("다시 도전하기"):
-        st.session_state.clear()
-        st.rerun()
+ # app.py의 랭킹 처리 부분
+try:
+    # worksheet 이름을 정확히 Sheet1으로 지정합니다.
+    df = conn.read(worksheet="Sheet1", ttl="0s")
+    
+    # 만약 불러온 데이터가 아예 비어있다면 빈 판을 만듭니다.
+    if df is None or df.empty:
+        df = pd.DataFrame(columns=["Name", "Score"])
