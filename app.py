@@ -94,13 +94,13 @@ if not st.session_state.game_over:
             st.session_state.game_over = True
             st.rerun()
 
-# --- 결과 화면 및 실시간 공유 랭킹 ---
+# --- 결과 화면 및 실시간 공유 랭킹 (디버깅 강화 버전) ---
 else:
     st.balloons()
     st.header(f"🏆 {st.session_state.user_name}님 종료!")
     st.metric("최종 점수", f"{st.session_state.total_score}점")
 
-    # 1. 등급 메시지
+    # 등급 메시지
     if st.session_state.total_score >= 45:
         st.success("🔥 **당신은 캠핑 트렌드 세터!**")
     elif st.session_state.total_score >= 30:
@@ -112,32 +112,36 @@ else:
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
     try:
-        # 2. 구글 시트 데이터 읽기
+        # 1. 시트 데이터 가져오기 시도
         df = conn.read(worksheet="Sheet1", ttl="0s")
-
-        # 3. 데이터가 비어있을 때 틀 만들기
+        
+        # 2. 데이터가 아예 없으면 빈 판 만들기
         if df is None or df.empty:
             df = pd.DataFrame(columns=["Name", "Score"])
         
-        # 4. 새 점수 추가
-        new_row = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
-        updated_df = pd.concat([df, new_row], ignore_index=True)
-
-        # 5. ⭐ 이 부분이 핵심 수정 사항입니다! ⭐
-        # 'data=' 를 명시하지 않고 바로 데이터를 먼저 넣어줄게요.
-        conn.update(data=updated_df, worksheet="Sheet1")
+        # 3. 내 점수 기록하기
+        new_record = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
+        updated_df = pd.concat([df, new_record], ignore_index=True)
         
-        # 6. 상위 3명 정렬 및 출력
+        # 4. 시트에 강제로 업데이트
+        conn.update(worksheet="Sheet1", data=updated_df)
+        
+        # 5. 상위 3명 정렬해서 보여주기
         updated_df["Score"] = pd.to_numeric(updated_df["Score"])
         top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
         
-        for i, row in enumerate(top_3.itertuples(), 1):
-            medal = ["🥇", "🥈", "🥉"][i-1]
-            st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
-            
+        if len(top_3) == 0:
+            st.write("아직 등록된 랭킹이 없습니다. 첫 번째 주인공이 되어보세요!")
+        else:
+            for i, row in enumerate(top_3.itertuples(), 1):
+                medal = ["🥇", "🥈", "🥉"][i-1]
+                st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
+                
     except Exception as e:
-        st.error("현재 랭킹을 저장할 수 없습니다.")
-        st.info(f"기술적 에러 내용: {e}")
+        # 💡 여기가 핵심입니다! 어떤 에러인지 화면에 다 보여줍니다.
+        st.error("🚨 랭킹판 연결에 문제가 발생했어요!")
+        st.warning(f"에러 원인: {e}") 
+        st.info("혹시 구글 시트의 탭 이름이 'Sheet1'이 맞는지, Secrets에 URL이 정확한지 확인해주세요.")
 
     if st.button("다시 도전하기"):
         st.session_state.clear()
