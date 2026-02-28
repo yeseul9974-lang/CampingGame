@@ -94,47 +94,43 @@ if not st.session_state.game_over:
             st.session_state.game_over = True
             st.rerun()
 
-# --- 결과 화면 및 랭킹 시스템 ---
+# --- 결과 화면 및 실시간 공유 랭킹 ---
 else:
     st.balloons()
-    st.header("🏆 게임 종료!")
-    st.subheader(f"{st.session_state.user_name}님의 최종 점수는 {st.session_state.total_score}점입니다.")
+    st.header(f"🏆 {st.session_state.user_name}님 종료!")
+    st.metric("최종 점수", f"{st.session_state.total_score}점")
 
-    # 1. 점수에 따른 등급 메시지
+    # 1. 등급 메시지
     if st.session_state.total_score >= 45:
-        st.success("🔥 **당신은 캠핑 트렌드 세터!** 사람들의 마음을 꿰뚫어 보시는군요.")
+        st.success("🔥 **당신은 캠핑 트렌드 세터!**")
     elif st.session_state.total_score >= 30:
-        st.info("🌳 **프로 캠퍼!** 대중적이고 합리적인 선택을 즐기시네요.")
+        st.info("🌳 **프로 캠퍼!**")
     else:
-        st.warning("🐣 **자유로운 영혼의 캠린이!** 유행보다는 본인만의 길을 가시네요.")
+        st.warning("🐣 **자유로운 영혼의 캠린이!**")
 
     st.markdown("---")
-    st.subheader("🏅 캠핑 고수 랭킹 (TOP 3)")
+    st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
-    # 2. 랭킹 데이터 처리 (여기서는 시연을 위해 세션 내 리스트로 예시를 보여줌)
-    # 실제 연결 시 아래 코드가 구글 시트에 데이터를 쓰고 읽어옵니다.
     try:
-        # 데이터 업데이트 (실제 구글 시트가 연결되어 있다면 아래 주석을 풉니다)
-        # new_data = pd.DataFrame([{"Name": st.session_state.user_name, "Score": st.session_state.total_score}])
-        # updated_df = pd.concat([conn.read(), new_data])
-        # conn.update(data=updated_df)
+        # 2. 구글 시트에서 데이터 읽기
+        df = conn.read(ttl="0s") # 실시간 반영을 위해 캐시를 끕니다
         
-        # 가상의 랭킹 리스트 (사용자가 시트 연결을 완료하기 전까지 보여줄 샘플)
-        ranking_data = [
-            {"Name": "전설의캠퍼", "Score": 50},
-            {"Name": "불멍장인", "Score": 48},
-            {"Name": "곱창왕Winnie", "Score": 46},
-            {"Name": st.session_state.user_name, "Score": st.session_state.total_score}
-        ]
-        df_ranking = pd.DataFrame(ranking_data).sort_values(by="Score", ascending=False).head(3)
+        # 3. 이번 판 점수 추가하기
+        new_data = pd.DataFrame([{"Name": st.session_state.user_name, "Score": st.session_state.total_score}])
+        updated_df = pd.concat([df, new_data], ignore_index=True)
         
-        # 랭킹 출력
-        for i, row in enumerate(df_ranking.itertuples(), 1):
+        # 4. 구글 시트에 업데이트 저장 (이 한 줄이 핵심!)
+        conn.update(data=updated_df)
+        
+        # 5. 상위 3명 정렬해서 보여주기
+        top_3 = updated_df.sort_values(by="Score", ascending=False).head(3)
+        
+        for i, row in enumerate(top_3.itertuples(), 1):
             medal = ["🥇", "🥈", "🥉"][i-1]
             st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
             
-    except:
-        st.write("랭킹 정보를 불러오는 중입니다...")
+    except Exception as e:
+        st.error("랭킹을 업데이트하는 중 오류가 발생했습니다. 시트 권한을 확인해주세요!")
 
     if st.button("다시 도전하기"):
         st.session_state.clear()
