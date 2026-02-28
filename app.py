@@ -112,14 +112,14 @@ else:
     st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
 
     try:
-        # 2. 구글 시트에서 데이터 읽기
-        df = conn.read(ttl="0s") # 실시간 반영을 위해 캐시를 끕니다
+        # 2. 구글 시트에서 데이터 읽기 (이 내용이 try 안에 꼭 있어야 합니다!)
+        df = conn.read(ttl="0s")
         
         # 3. 이번 판 점수 추가하기
         new_data = pd.DataFrame([{"Name": st.session_state.user_name, "Score": st.session_state.total_score}])
         updated_df = pd.concat([df, new_data], ignore_index=True)
         
-        # 4. 구글 시트에 업데이트 저장 (이 한 줄이 핵심!)
+        # 4. 구글 시트에 업데이트 저장
         conn.update(data=updated_df)
         
         # 5. 상위 3명 정렬해서 보여주기
@@ -129,9 +129,9 @@ else:
             medal = ["🥇", "🥈", "🥉"][i-1]
             st.write(f"{medal} {i}위: **{row.Name}** - {row.Score}점")
             
- # 기존 except 부분을 이렇게 잠시 바꿔보세요
-except Exception as e:
-    st.error(f"진짜 에러 내용: {e}") # 이렇게 하면 컴퓨터가 진짜 이유를 말해줍니다!
+    except Exception as e:
+        # 진짜 범인을 찾기 위한 상세 에러 메시지
+        st.error(f"❌ 연결 오류 발생! 아래 내용을 확인해주세요:\n\n{e}")
 
     if st.button("다시 도전하기"):
         st.session_state.clear()
