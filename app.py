@@ -94,35 +94,48 @@ if not st.session_state.game_over:
             st.session_state.game_over = True
             st.rerun()
 
-# --- 결과 화면 및 실시간 공유 랭킹 (범인 검거 버전) ---
+# --- 결과 화면 및 명예의 전당 (안정 버전) ---
 else:
     st.balloons()
     st.header(f"🏆 {st.session_state.user_name}님 종료!")
-    st.metric("최종 점수", f"{st.session_state.total_score}점")
+    st.metric("당신의 최종 점수", f"{st.session_state.total_score}점")
+
+    # 1. 등급 메시지
+    if st.session_state.total_score >= 45:
+        st.success("🔥 **당신은 캠핑 트렌드 세터!**")
+    elif st.session_state.total_score >= 30:
+        st.info("🌳 **프로 캠퍼!**")
+    else:
+        st.warning("🐣 **자유로운 영혼의 캠린이!**")
 
     st.markdown("---")
-    st.subheader("🏅 전 세계 캠핑 고수 TOP 3")
+    st.subheader("🏅 명예의 전당 (TOP 3)")
+    st.caption("주기적으로 고득점 캠퍼들이 업데이트됩니다!")
 
     try:
-        # 1. 시트 데이터 가져오기
+        # 2. 구글 시트에서 데이터 읽기 (읽기는 로그인 없이도 가능합니다)
         df = conn.read(ttl="0s")
         
-        # 2. 내 점수 추가 및 랭킹 정렬
-        new_data = pd.DataFrame([{"Name": str(st.session_state.user_name), "Score": int(st.session_state.total_score)}])
-        updated_df = pd.concat([df, new_data], ignore_index=True)
-        
-        # 3. 시트 업데이트 시도
-        conn.update(data=updated_df)
-        
-        # 4. 상위 3명 출력
-        top_3 = updated_df.sort_values(by=updated_df.columns[1], ascending=False).head(3)
-        for i, row in enumerate(top_3.itertuples(), 1):
-            st.write(f"{i}위: **{row[1]}** - {row[2]}점")
+        if df is not None and not df.empty:
+            # 컬럼 이름이 틀려도 작동하도록 강제 지정
+            df.columns = ["Name", "Score"]
+            df["Score"] = pd.to_numeric(df["Score"], errors='coerce')
             
-    except Exception as e:
-        # 💡 이 부분이 핵심입니다! 에러를 아주 크게 빨간 상자에 다 집어넣어 버릴 거예요.
-        st.error(f"🚨 연결 오류 발생! 아래의 영어 문장을 저에게 알려주세요:\n\n{str(e)}")
-        
+            # 3. 상위 3명 정렬 및 출력
+            top_3 = df.sort_values(by="Score", ascending=False).head(3)
+            
+            for i, row in enumerate(top_3.itertuples(), 1):
+                medal = ["🥇", "🥈", "🥉"][i-1]
+                st.write(f"{medal} {i}위: **{row.Name}** - {int(row.Score)}점")
+        else:
+            st.write("아직 등록된 전설의 캠퍼가 없습니다.")
+            
+    except Exception:
+        # 에러가 나더라도 게임 진행에 방해되지 않게 조용히 처리합니다.
+        st.write("명예의 전당 정보를 불러오는 중입니다...")
+
+    st.info("💡 랭킹 등록을 원하시나요? 점수 화면을 캡처해서 주인에게 공유해주세요!")
+
     if st.button("다시 도전하기"):
         st.session_state.clear()
         st.rerun()
