@@ -11,7 +11,7 @@ def calculate_score(index_val):
 game_rounds = [
     {
         "round": "1R: 커플 캠핑의 로망",
-        "condition": ""첫 캠핑! 캠핑의 꽃은 고기!",
+        "condition": "첫 캠핑! 캠핑의 꽃은 고기!",
         "options": {"목살": 85, "삼겹살": 100, "우대갈비": 48, "양갈비": 28, "토마호크": 62}
     },
     {
