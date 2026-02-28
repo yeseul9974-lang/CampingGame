@@ -1,0 +1,6 @@
+[theme]
+primaryColor = "#4E6E58" # 포인트 색상 (진한 초록)
+backgroundColor = "#F5F5DC" # 배경색 (베이지/갈색)
+secondaryBackgroundColor = "#D2B48C" # 보조 배경색 (연한 갈색)
+textColor = "#2E2E2E" # 글자 색상
+font = "sans serif"
