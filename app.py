@@ -102,7 +102,7 @@ else:
     st.metric("당신의 최종 점수", f"{st.session_state.total_score}점")
     
     # 점수 기준표 (LaTeX)
-    st.latex(r"Score = \begin{cases} 10, & \text{if } 80 \le x \le 100 \\ 6, & \text{if } 40 \le x < 80 \\ 4, & \text{if } 20 \le x < 40 \\ 1, & \text{if } 0 \le x < 20 \end{cases}")
+    //st.latex(r"Score = \begin{cases} 10, & \text{if } 80 \le x \le 100 \\ 6, & \text{if } 40 \le x < 80 \\ 4, & \text{if } 20 \le x < 40 \\ 1, & \text{if } 0 \le x < 20 \end{cases}")
 
     if st.session_state.total_score >= 45:
         st.success("🔥 **당신은 캠핑 트렌드 세터!** 사람들의 마음을 꿰뚫어 보시는군요.")
